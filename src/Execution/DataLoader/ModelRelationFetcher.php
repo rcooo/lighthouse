@@ -32,7 +32,7 @@ class ModelRelationFetcher
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection  $models  The parent models that relations should be loaded for
-     * @param  mixed[]  $relations The relations to be loaded. Same format as the `with` method in Eloquent builder.
+     * @param  array<mixed>  $relations The relations to be loaded. Same format as the `with` method in Eloquent builder.
      */
     public function __construct(EloquentCollection $models, array $relations)
     {
@@ -50,6 +50,11 @@ class ModelRelationFetcher
      */
     public function loadRelationsForPage(PaginationArgs $paginationArgs): EloquentCollection
     {
+        // Load the count of relations of models, this will be the `total` argument of `Paginator`.
+        // Be aware that this will reload all the models entirely with the count of their relations,
+        // which will bring extra DB queries, always prefer querying without pagination if possible.
+        $this->reloadModelsWithRelationCount();
+
         foreach ($this->relations as $name => $constraints) {
             $this->loadRelationForPage($paginationArgs, $name, $constraints);
         }
@@ -92,15 +97,11 @@ class ModelRelationFetcher
      */
     protected function loadRelationForPage(PaginationArgs $paginationArgs, string $relationName, Closure $relationConstraints): void
     {
-        // Load the count of relations of models, this will be the `total` argument of `Paginator`.
-        // Be aware that this will reload all the models entirely with the count of their relations,
-        // which will bring extra DB queries, always prefer querying without pagination if possible.
-        $this->reloadModelsWithRelationCount();
-
         $relations = $this
             ->buildRelationsFromModels($relationName, $relationConstraints)
             ->map(
                 function (Relation $relation) use ($paginationArgs) {
+                    /** @var \Illuminate\Database\Eloquent\Relations\Relation&\Illuminate\Database\Eloquent\Builder $relation */
                     return $relation->forPage($paginationArgs->page, $paginationArgs->first);
                 }
             );
@@ -142,7 +143,7 @@ class ModelRelationFetcher
     {
         return $this->models->toBase()->map(
             function (Model $model) use ($relationName, $relationConstraints): Relation {
-                $relation = $this->getRelationInstance($relationName);
+                $relation = $this->relationInstance($relationName);
 
                 $relation->addEagerConstraints([$model]);
 
@@ -154,12 +155,14 @@ class ModelRelationFetcher
                     $shouldSelect->setAccessible(true);
                     $select = $shouldSelect->invoke($relation, ['*']);
 
+                    // @phpstan-ignore-next-line Relation&Builder mixin not recognized
                     $relation->addSelect($select);
                 } elseif (method_exists($relation, 'getSelectColumns')) {
                     $getSelectColumns = new ReflectionMethod(get_class($relation), 'getSelectColumns');
                     $getSelectColumns->setAccessible(true);
                     $select = $getSelectColumns->invoke($relation, ['*']);
 
+                    // @phpstan-ignore-next-line Relation&Builder mixin not recognized
                     $relation->addSelect($select);
                 }
 
@@ -178,11 +181,11 @@ class ModelRelationFetcher
      */
     protected function loadDefaultWith(EloquentCollection $collection): self
     {
-        if ($collection->isEmpty()) {
+        $model = $collection->first();
+        if ($model === null) {
             return $this;
         }
 
-        $model = $collection->first();
         $reflection = new ReflectionClass($model);
         $withProperty = $reflection->getProperty('with');
         $withProperty->setAccessible(true);
@@ -203,21 +206,26 @@ class ModelRelationFetcher
      *
      * @see \Illuminate\Database\Eloquent\Concerns\QueriesRelationships->withCount()
      */
-    protected function getRelationCountName(string $relationName): string
+    protected function relationCountName(string $relationName): string
     {
         return Str::snake("{$relationName}_count");
     }
 
     /**
      * Merge all the relation queries into a single query with UNION ALL.
+     *
+     * @param  \Illuminate\Support\Collection<\Illuminate\Database\Eloquent\Relations\Relation>  $relations
      */
     protected function unionAllRelationQueries(Collection $relations): EloquentBuilder
     {
+        // We have to make sure to use ->getQuery() in order to respect
+        // model scopes, such as soft deletes
         return $relations
             ->reduce(
-                function (EloquentBuilder $builder, Relation $relation) {
+                function (EloquentBuilder $builder, Relation $relation): EloquentBuilder {
                     return $builder->unionAll(
-                        $relation->getBaseQuery()
+                        // @phpstan-ignore-next-line Laravel is not that strictly typed
+                        $relation->getQuery()
                     );
                 },
                 // Use the first query as the initial starting point
@@ -232,7 +240,7 @@ class ModelRelationFetcher
     {
         $this->models->each(function (Model $model) use ($paginationArgs, $relationName): void {
             $total = $model->getAttribute(
-                $this->getRelationCountName($relationName)
+                $this->relationCountName($relationName)
             );
 
             $paginator = app()->makeWith(
@@ -259,7 +267,7 @@ class ModelRelationFetcher
      */
     protected function associateRelationModels(string $relationName, EloquentCollection $relationModels): self
     {
-        $relation = $this->getRelationInstance($relationName);
+        $relation = $this->relationInstance($relationName);
 
         $relation->match(
             $this->models->all(),
@@ -278,7 +286,7 @@ class ModelRelationFetcher
      */
     protected function hydratePivotRelation(string $relationName, EloquentCollection $relationModels): self
     {
-        $relation = $this->getRelationInstance($relationName);
+        $relation = $this->relationInstance($relationName);
 
         if ($relationModels->isNotEmpty() && method_exists($relation, 'hydratePivotRelation')) {
             $hydrationMethod = new ReflectionMethod(get_class($relation), 'hydratePivotRelation');
@@ -292,7 +300,7 @@ class ModelRelationFetcher
     /**
      * Use the underlying model to instantiate a relation by name.
      */
-    protected function getRelationInstance(string $relationName): Relation
+    protected function relationInstance(string $relationName): Relation
     {
         return $this
             ->newModelQuery()

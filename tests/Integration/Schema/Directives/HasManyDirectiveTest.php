@@ -3,6 +3,7 @@
 namespace Tests\Integration\Schema\Directives;
 
 use GraphQL\Error\Error;
+use GraphQL\Type\Definition\Type;
 use Illuminate\Support\Arr;
 use Nuwave\Lighthouse\Pagination\PaginationArgs;
 use Tests\DBTestCase;
@@ -31,9 +32,9 @@ class HasManyDirectiveTest extends DBTestCase
         parent::setUp();
 
         $this->user = factory(User::class)->create();
-        $this->tasks = factory(Task::class, 3)->create([
-            'user_id' => $this->user->getKey(),
-        ]);
+        $this->tasks = factory(Task::class, 3)->make();
+        $this->user->tasks()->saveMany($this->tasks);
+
         factory(Task::class)->create([
             'user_id' => $this->user->getKey(),
             // This task should be ignored via global scope on the Task model
@@ -76,6 +77,44 @@ class HasManyDirectiveTest extends DBTestCase
             }
         }
         ')->assertJsonCount(3, 'data.user.tasks');
+    }
+
+    public function testCanQueryHasManyWithCondition(): void
+    {
+        $this->schema = /** @lang GraphQL */ '
+        type User {
+            tasks(
+                id: ID @eq
+            ): [Task!]! @hasMany
+        }
+
+        type Task {
+            id: Int
+            foo: String
+        }
+
+        type Query {
+            user: User @auth
+        }
+        ';
+
+        /** @var Task $firstTask */
+        $firstTask = $this->user->tasks->first();
+
+        // Ensure global scopes are respected here
+        $this
+            ->graphQL(/** @lang GraphQL */ '
+            query ($id: ID){
+                user {
+                    tasks(id: $id) {
+                        id
+                    }
+                }
+            }
+            ', [
+                'id' => $firstTask->id,
+            ])
+            ->assertJsonCount(1, 'data.user.tasks');
     }
 
     public function testCallsScopeWithResolverArgs(): void
@@ -237,7 +276,7 @@ class HasManyDirectiveTest extends DBTestCase
 
         $this->assertSame(
             PaginationArgs::requestedTooManyItems(3, 5),
-            $result->jsonGet('errors.0.message')
+            $result->json('errors.0.message')
         );
     }
 
@@ -313,7 +352,7 @@ class HasManyDirectiveTest extends DBTestCase
 
         $this->assertSame(
             PaginationArgs::requestedTooManyItems(3, 5),
-            $result->jsonGet('errors.0.message')
+            $result->json('errors.0.message')
         );
     }
 
@@ -349,7 +388,7 @@ class HasManyDirectiveTest extends DBTestCase
 
         $this->assertSame(
             PaginationArgs::requestedTooManyItems(2, 3),
-            $result->jsonGet('errors.0.message')
+            $result->json('errors.0.message')
         );
     }
 
@@ -387,7 +426,7 @@ class HasManyDirectiveTest extends DBTestCase
 
         $this->assertSame(
             PaginationArgs::requestedTooManyItems(2, 3),
-            $result->jsonGet('errors.0.message')
+            $result->json('errors.0.message')
         );
     }
 
@@ -423,10 +462,13 @@ class HasManyDirectiveTest extends DBTestCase
         );
 
         $user = $this->introspectType('User');
+
+        $this->assertNotNull($user);
+        /** @var array<string, mixed> $user */
         $tasks = Arr::first(
-            $user['fields'],
-            function (array $user): bool {
-                return $user['name'] === 'tasks';
+            $user['fields'], // @phpstan-ignore-line
+            function (array $field): bool {
+                return $field['name'] === 'tasks';
             }
         );
         $this->assertSame(
@@ -706,6 +748,9 @@ class HasManyDirectiveTest extends DBTestCase
         ');
 
         $type = $schema->getType('User');
+
+        $this->assertInstanceOf(Type::class, $type);
+        /** @var \GraphQL\Type\Definition\Type $type */
         $type->config['fields']();
     }
 

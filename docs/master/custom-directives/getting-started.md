@@ -3,10 +3,10 @@
 As you grow your GraphQL schema, you may find the need for more specialized functionality.
 Learn how you can abstract logic in a composable and reusable manner by using custom directives.
 
-## Naming Conventions
-
 Directives are implemented as PHP classes, each directive available
 in the schema corresponds to a single class.
+
+## Naming Convention
 
 Directive names themselves are typically defined in **camelCase**.
 The class name of a directive must follow the following pattern:
@@ -16,7 +16,7 @@ The class name of a directive must follow the following pattern:
 Let's implement a simple `@upperCase` directive as a part of this introduction.
 Use the artisan generator command to create it:
 
-    php artisan lighthouse:directive upperCase
+    php artisan lighthouse:directive --argument upperCase
 
 That will create a class called `UpperCaseDirective` that extends the
 abstract class `\Nuwave\Lighthouse\Schema\Directives\BaseDirective`.
@@ -26,7 +26,28 @@ abstract class `\Nuwave\Lighthouse\Schema\Directives\BaseDirective`.
 
 use Nuwave\Lighthouse\Schema\Directives\BaseDirective;
 
-class UpperCaseDirective extends BaseDirective {}
+class UpperCaseDirective extends BaseDirective
+{
+    /**
+     * Formal directive specification in schema definition language (SDL).
+     *
+     * @return string
+     */
+    public static function definition(): string
+    {
+        return /** @lang GraphQL */ <<<'GRAPHQL'
+"""
+A description of what this directive does.
+"""
+directive @upperCase(
+    """
+    Directives can have arguments to parameterize them.
+    """
+    someArg: String
+) on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+GRAPHQL;
+    }
+}
 ```
 
 ## Directive Interfaces
@@ -53,6 +74,8 @@ use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 class UpperCaseDirective extends BaseDirective implements FieldMiddleware
 {
+    public static function definition(): string {}
+
     /**
      * Wrap around the final field resolver.
      *

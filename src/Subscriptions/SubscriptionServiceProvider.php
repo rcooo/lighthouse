@@ -15,8 +15,6 @@ use Nuwave\Lighthouse\Subscriptions\Contracts\ContextSerializer;
 use Nuwave\Lighthouse\Subscriptions\Contracts\StoresSubscriptions;
 use Nuwave\Lighthouse\Subscriptions\Contracts\SubscriptionExceptionHandler;
 use Nuwave\Lighthouse\Subscriptions\Contracts\SubscriptionIterator;
-use Nuwave\Lighthouse\Subscriptions\Events\BroadcastSubscriptionEvent;
-use Nuwave\Lighthouse\Subscriptions\Events\BroadcastSubscriptionListener;
 use Nuwave\Lighthouse\Subscriptions\Iterators\AuthenticatingSyncIterator;
 use Nuwave\Lighthouse\Subscriptions\Iterators\SyncIterator;
 use Nuwave\Lighthouse\Support\Contracts\ProvidesSubscriptionResolver;
@@ -25,11 +23,6 @@ class SubscriptionServiceProvider extends ServiceProvider
 {
     public function boot(EventsDispatcher $eventsDispatcher, ConfigRepository $configRepository): void
     {
-        $eventsDispatcher->listen(
-            BroadcastSubscriptionEvent::class,
-            BroadcastSubscriptionListener::class
-        );
-
         $eventsDispatcher->listen(
             StartExecution::class,
             SubscriptionRegistry::class.'@handleStartExecution'
@@ -81,8 +74,9 @@ class SubscriptionServiceProvider extends ServiceProvider
 
         if ($routesMethod = $configRepository->get("lighthouse.subscriptions.broadcasters.{$broadcaster}.routes")) {
             [$routesProviderClass, $method] = Str::parseCallback($routesMethod, 'pusher');
-
-            $routesProvider = $this->app->make($routesProviderClass);
+            /** @var class-string $routesProviderClass */
+            /** @var string $method */
+            $routesProvider = $this->app->make($routesProviderClass); // @phpstan-ignore-line
             $router = $this->app->make('router');
 
             $routesProvider->{$method}($router);

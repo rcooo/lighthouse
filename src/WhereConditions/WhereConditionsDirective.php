@@ -6,7 +6,7 @@ class WhereConditionsDirective extends WhereConditionsBaseDirective
 {
     public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
 Add a dynamically client-controlled WHERE condition to a fields query.
 """
@@ -25,7 +25,7 @@ directive @whereConditions(
     """
     columnsEnum: String
 ) on ARGUMENT_DEFINITION
-SDL;
+GRAPHQL;
     }
 
     /**
@@ -33,7 +33,7 @@ SDL;
      * @param  array<string, mixed>|null  $whereConditions
      * @return \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
      */
-    public function handleBuilder($builder, $whereConditions)
+    public function handleBuilder($builder, $whereConditions): object
     {
         // The value `null` should be allowed but have no effect on the query.
         if (is_null($whereConditions)) {
@@ -41,5 +41,10 @@ SDL;
         }
 
         return $this->handleWhereConditions($builder, $whereConditions);
+    }
+
+    protected function generatedInputSuffix(): string
+    {
+        return 'WhereConditions';
     }
 }

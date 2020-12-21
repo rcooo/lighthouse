@@ -112,6 +112,32 @@ class BelongsToTest extends DBTestCase
         ]);
     }
 
+    public function testBelongsToExplicitNullHasNoEffect(): void
+    {
+        $this->graphQL(/** @lang GraphQL */ '
+        mutation {
+            createTask(input: {
+                name: "foo"
+                user: null
+            }) {
+                id
+                name
+                user {
+                    id
+                }
+            }
+        }
+        ')->assertJson([
+            'data' => [
+                'createTask' => [
+                    'id' => '1',
+                    'name' => 'foo',
+                    'user' => null,
+                ],
+            ],
+        ]);
+    }
+
     public function testCanUpsertUsingCreateAndConnectWithBelongsTo(): void
     {
         factory(User::class)->create();
@@ -513,12 +539,12 @@ GRAPHQL
         ]);
 
         $this->assertTrue(
-            User::find(1)->exists,
+            User::findOrFail(1)->exists,
             'Must not delete the second model.'
         );
 
         $this->assertNull(
-            Task::find(1)->user,
+            Task::findOrFail(1)->user,
             'Must disconnect the parent relationship.'
         );
     }
@@ -559,7 +585,7 @@ GRAPHQL
         ]);
 
         $this->assertTrue(
-            User::find($user->id)->exists,
+            User::findOrFail($user->id)->exists,
             'Must not delete the second model.'
         );
 
@@ -657,7 +683,7 @@ GRAPHQL
         );
 
         $this->assertNull(
-            Task::find(1)->user,
+            Task::findOrFail(1)->user,
             'Must disconnect the parent relationship.'
         );
     }
@@ -871,7 +897,7 @@ GRAPHQL
         ]);
 
         // The first User has the first Role.
-        $role = Role::first();
+        $role = Role::firstOrFail();
         $this->assertEquals([1], $role->users()->pluck('users.id')->toArray());
 
         // Create another User.

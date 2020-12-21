@@ -447,8 +447,8 @@ directive @can(
   ability: String!
 
   """
-  The name of the argument that is used to find a specific model
-  instance against which the permissions should be checked.
+  If your policy checks against specific model instances, specify
+  the name of the field argument that contains its primary key(s).
   """
   find: String
 
@@ -2237,7 +2237,7 @@ Add the service provider to your `config/app.php`
 
 Install the dependency [mll-lab/graphql-php-scalars](https://github.com/mll-lab/graphql-php-scalars):
 
-    composer require mll-lab/graphql-php-scalars
+    composer require mll-lab/graphql-php-scalars:^3
 
 Add an enum type `Operator` to your schema. Depending on your
 database, you may want to allow different internal values. This default

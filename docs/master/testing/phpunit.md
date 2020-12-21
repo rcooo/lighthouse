@@ -127,7 +127,7 @@ public function testOrdersUsersByName(): void
 ### TestResponse Assertion Mixins
 
 Lighthouse conveniently provides additional assertions as mixins to the `TestResponse` class.
-Make sure to publish the latest [IDE-helper file](/_ide_helper.php) to get proper autocompletion:
+Make sure to generate the latest [IDE-helper file](/_ide_helper.php) to get proper autocompletion:
 
 ```bash
 php artisan lighthouse:ide-helper
@@ -155,28 +155,25 @@ Since multipart form requests are tricky to construct, you can just use the `mul
 helper method.
 
 ```php
-$this->multipartGraphQL(
-    [
-        'operations' => /** @lang JSON */
-            '
-            {
-                "query": "mutation Upload($file: Upload!) { upload(file: $file) }",
-                "variables": {
-                    "file": null
-                }
-            }
-        ',
-        'map' => /** @lang JSON */
-            '
-            {
-                "0": ["variables.file"]
-            }
-        ',
+$operations = [
+    'operationName' => 'upload',
+    'query' => 'mutation upload ($file: Upload!) {
+                    upload (file: $file)
+                }',
+    'variables' => [
+        'file' => null,
     ],
-    [
-        '0' => UploadedFile::fake()->create('image.jpg', 500),
-    ]
-)
+];
+
+$map = [
+    '0' => ['variables.file'],
+];
+
+$file = [
+    '0' => UploadedFile::fake()->create('test.pdf', 500),
+];
+
+$this->multipartGraphQL($operations, $map, $file);
 ```
 
 ## Introspection

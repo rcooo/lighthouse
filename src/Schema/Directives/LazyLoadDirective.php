@@ -7,31 +7,27 @@ use GraphQL\Deferred;
 use GraphQL\Type\Definition\ResolveInfo;
 use Illuminate\Database\Eloquent\Collection;
 use Nuwave\Lighthouse\Schema\Values\FieldValue;
-use Nuwave\Lighthouse\Support\Contracts\DefinedDirective;
 use Nuwave\Lighthouse\Support\Contracts\FieldMiddleware;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
-class LazyLoadDirective extends BaseDirective implements DefinedDirective, FieldMiddleware
+class LazyLoadDirective extends BaseDirective implements FieldMiddleware
 {
     public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
 Perform a [lazy eager load](https://laravel.com/docs/eloquent-relationships#lazy-eager-loading)
 on the relations of a list of models.
 """
 directive @lazyLoad(
-    """
-    The names of the relationship methods to load.
-    """
-    relations: [String!]!
-) on FIELD_DEFINITION
-SDL;
+  """
+  The names of the relationship methods to load.
+  """
+  relations: [String!]!
+) repeatable on FIELD_DEFINITION
+GRAPHQL;
     }
 
-    /**
-     * Resolve the field directive.
-     */
     public function handleField(FieldValue $fieldValue, Closure $next): FieldValue
     {
         $relations = $this->directiveArgValue('relations', []);

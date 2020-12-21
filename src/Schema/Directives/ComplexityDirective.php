@@ -5,15 +5,14 @@ namespace Nuwave\Lighthouse\Schema\Directives;
 use Closure;
 use Illuminate\Support\Arr;
 use Nuwave\Lighthouse\Schema\Values\FieldValue;
-use Nuwave\Lighthouse\Support\Contracts\DefinedDirective;
 use Nuwave\Lighthouse\Support\Contracts\FieldMiddleware;
 use Nuwave\Lighthouse\Support\Utils;
 
-class ComplexityDirective extends BaseDirective implements FieldMiddleware, DefinedDirective
+class ComplexityDirective extends BaseDirective implements FieldMiddleware
 {
     public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
 Customize the calculation of a fields complexity score before execution.
 """
@@ -25,12 +24,9 @@ directive @complexity(
   """
   resolver: String
 ) on FIELD_DEFINITION
-SDL;
+GRAPHQL;
     }
 
-    /**
-     * Resolve the field directive.
-     */
     public function handleField(FieldValue $fieldFieldValue, Closure $next): FieldValue
     {
         if ($this->directiveHasArgument('resolver')) {
@@ -45,11 +41,7 @@ SDL;
         } else {
             $resolver = function (int $childrenComplexity, array $args): int {
                 /** @var int $complexity */
-                $complexity = Arr::get(
-                    $args,
-                    'first',
-                    Arr::get($args, config('lighthouse.pagination_amount_argument'), 1)
-                );
+                $complexity = Arr::get($args, 'first', 1);
 
                 return $childrenComplexity * $complexity;
             };

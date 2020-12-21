@@ -36,12 +36,24 @@ Internally represented as an instance of `Carbon\Carbon`.
 ## DateTimeTz
 
 ```graphql
-"A datetime and timezone string in ISO 8601 format `Y-m-dTH:i:sO`, e.g. `2020-04-20T13:53:12+02:00`."
+"A datetime and timezone string in ISO 8601 format `Y-m-dTH:i:sP`, e.g. `2020-04-20T13:53:12+02:00`."
 scalar DateTimeTz
   @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTimeTz")
 ```
 
 Internally represented as an instance of `Carbon\Carbon`.
+
+## DateTimeUtc
+
+```graphql
+"A datetime string in ISO 8601 format in UTC with nanoseconds `YYYY-MM-DDTHH:mm:ss.SSSSSSZ`, e.g. `2020-04-20T16:20:04.000000Z`."
+scalar DateTimeUtc
+  @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTimeUtc")
+```
+
+Internally represented as an instance of `Carbon\Carbon`.
+
+> Only works with Carbon 2.
 
 ## Upload
 
@@ -55,5 +67,5 @@ This Scalar can only be used as an argument, not as a return type.
 For more information, please refer to the [file uploads guide](../digging-deeper/file-uploads.md).
 
 The multipart form request is handled by Lighthouse, the resolver gets passed
-an instance of [`\Illuminate\Http\UploadedFile`](https://laravel.com/api/Illuminate/Http/UploadedFile.html)
+an instance of [`\Illuminate\Http\UploadedFile`](https://laravel.com/api/7.x/Illuminate/Http/UploadedFile.html)
 in the argument `array $variables`.

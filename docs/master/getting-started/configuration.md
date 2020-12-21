@@ -4,7 +4,7 @@ Lighthouse comes with sensible configuration defaults and works right out of the
 Should you feel the need to change your configuration, you need to publish the configuration file first.
 
 ```bash
-php artisan vendor:publish --provider="Nuwave\Lighthouse\LighthouseServiceProvider" --tag=config
+php artisan vendor:publish --tag=lighthouse-config
 ```
 
 The configuration file will be placed in `config/lighthouse.php`.
@@ -17,8 +17,8 @@ for your GraphQL endpoint in `config/cors.php`:
 
 ```diff
 return [
--   'paths' => ['api/*'],
-+   'paths' => ['api/*', 'graphql'],
+-   'paths' => ['api/*', 'sanctum/csrf-cookie'],
++   'paths' => ['api/*', 'graphql', 'sanctum/csrf-cookie'],
     ...
 ];
 ```

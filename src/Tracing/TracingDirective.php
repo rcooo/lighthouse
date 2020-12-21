@@ -7,11 +7,10 @@ use GraphQL\Deferred;
 use GraphQL\Type\Definition\ResolveInfo;
 use Nuwave\Lighthouse\Schema\Directives\BaseDirective;
 use Nuwave\Lighthouse\Schema\Values\FieldValue;
-use Nuwave\Lighthouse\Support\Contracts\DefinedDirective;
 use Nuwave\Lighthouse\Support\Contracts\FieldMiddleware;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
-class TracingDirective extends BaseDirective implements FieldMiddleware, DefinedDirective
+class TracingDirective extends BaseDirective implements FieldMiddleware
 {
     /**
      * @var \Nuwave\Lighthouse\Tracing\Tracing
@@ -25,18 +24,15 @@ class TracingDirective extends BaseDirective implements FieldMiddleware, Defined
 
     public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
 Do not use this directive directly, it is automatically added to the schema
 when using the tracing extension.
 """
 directive @tracing on FIELD_DEFINITION
-SDL;
+GRAPHQL;
     }
 
-    /**
-     * Resolve the field directive.
-     */
     public function handleField(FieldValue $fieldValue, Closure $next): FieldValue
     {
         $fieldValue = $next($fieldValue);

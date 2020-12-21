@@ -2,15 +2,13 @@
 
 namespace Nuwave\Lighthouse\Schema\Directives;
 
-use Nuwave\Lighthouse\Support\Contracts\DefinedDirective;
 use Nuwave\Lighthouse\Support\Contracts\FieldManipulator;
-use Nuwave\Lighthouse\Support\Contracts\FieldResolver;
 
-class HasManyDirective extends RelationDirective implements FieldResolver, FieldManipulator, DefinedDirective
+class HasManyDirective extends RelationDirective implements FieldManipulator
 {
     public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
 Corresponds to [the Eloquent relationship HasMany](https://laravel.com/docs/eloquent-relationships#one-to-many).
 """
@@ -27,7 +25,7 @@ directive @hasMany(
   scopes: [String!]
 
   """
-  ALlows to resolve the relation as a paginated list.
+  Allows to resolve the relation as a paginated list.
   Allowed values: `paginator`, `connection`.
   """
   type: String
@@ -51,6 +49,6 @@ directive @hasMany(
   """
   edgeType: String
 ) on FIELD_DEFINITION
-SDL;
+GRAPHQL;
     }
 }

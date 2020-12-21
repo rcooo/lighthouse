@@ -2,22 +2,15 @@
 
 namespace Nuwave\Lighthouse\Schema\Directives;
 
-use Nuwave\Lighthouse\Support\Contracts\DefinedDirective;
 use Nuwave\Lighthouse\Support\Contracts\FieldManipulator;
-use Nuwave\Lighthouse\Support\Contracts\FieldResolver;
 
-class MorphManyDirective extends RelationDirective implements FieldResolver, FieldManipulator, DefinedDirective
+class MorphManyDirective extends RelationDirective implements FieldManipulator
 {
-    /**
-     * SDL definition of the directive.
-     *
-     * @return string
-     */
-    public static function definition()
+    public static function definition(): string
     {
-        return /** @lang GraphQL */ <<<'SDL'
+        return /** @lang GraphQL */ <<<'GRAPHQL'
 """
-Corresponds to [Eloquent's MorphMany-Relationship](https://laravel.com/docs/eloquent-relationships#one-to-one-polymorphic-relations).
+Corresponds to [Eloquent's MorphMany-Relationship](https://laravel.com/docs/eloquent-relationships#one-to-many-polymorphic-relations).
 """
 directive @morphMany(
   """
@@ -32,7 +25,7 @@ directive @morphMany(
   scopes: [String!]
 
   """
-  ALlows to resolve the relation as a paginated list.
+  Allows to resolve the relation as a paginated list.
   Allowed values: `paginator`, `connection`.
   """
   type: String
@@ -56,6 +49,6 @@ directive @morphMany(
   """
   edgeType: String
 ) on FIELD_DEFINITION
-SDL;
+GRAPHQL;
     }
 }

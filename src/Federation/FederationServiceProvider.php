@@ -3,6 +3,7 @@
 namespace Nuwave\Lighthouse\Federation;
 
 use GraphQL\Language\AST\ObjectTypeDefinitionNode;
+use GraphQL\Language\Parser;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 use Nuwave\Lighthouse\Events\ManipulateAST;
@@ -49,16 +50,16 @@ class FederationServiceProvider extends ServiceProvider
             $queryType->fields = ASTHelper::mergeNodeList(
                 $queryType->fields,
                 [
-                    PartialParser::fieldDefinition('_entities(representations: [_Any!]!): [_Entity]! @field(resolver: "Nuwave\\\Lighthouse\\\Federation\\\Resolvers\\\Entity@resolve")'),
-                    PartialParser::fieldDefinition('_service: _Service! @field(resolver: "Nuwave\\\Lighthouse\\\Federation\\\Resolvers\\\Service@resolveSdl")'),
+                    Parser::fieldDefinition('_entities(representations: [_Any!]!): [_Entity]! @field(resolver: "Nuwave\\\Lighthouse\\\Federation\\\Resolvers\\\Entity@resolve")'),
+                    Parser::fieldDefinition('_service: _Service! @field(resolver: "Nuwave\\\Lighthouse\\\Federation\\\Resolvers\\\Service@resolveSdl")'),
                 ]
             );
 
             $manipulateAST->documentAST->setTypeDefinition(
-                PartialParser::objectTypeDefinition('
-                type _Service {
-                    sdl: String
-                }
+                Parser::objectTypeDefinition('
+                    type _Service {
+                        sdl: String
+                    }
                 ')
             );
         }
@@ -71,11 +72,11 @@ class FederationServiceProvider extends ServiceProvider
      */
     protected function addDirectives(ManipulateAST &$manipulateAST): void
     {
-        $manipulateAST->documentAST->setDirectiveDefinition(PartialParser::directiveDefinition(ExternalDirective::definition()));
-        $manipulateAST->documentAST->setDirectiveDefinition(PartialParser::directiveDefinition(RequiresDirective::definition()));
-        $manipulateAST->documentAST->setDirectiveDefinition(PartialParser::directiveDefinition(ProvidesDirective::definition()));
-        $manipulateAST->documentAST->setDirectiveDefinition(PartialParser::directiveDefinition(KeyDirective::definition()));
-        $manipulateAST->documentAST->setDirectiveDefinition(PartialParser::directiveDefinition(ExtendsDirective::definition()));
+        $manipulateAST->documentAST->setDirectiveDefinition(Parser::directiveDefinition(ExternalDirective::definition()));
+        $manipulateAST->documentAST->setDirectiveDefinition(Parser::directiveDefinition(RequiresDirective::definition()));
+        $manipulateAST->documentAST->setDirectiveDefinition(Parser::directiveDefinition(ProvidesDirective::definition()));
+        $manipulateAST->documentAST->setDirectiveDefinition(Parser::directiveDefinition(KeyDirective::definition()));
+        $manipulateAST->documentAST->setDirectiveDefinition(Parser::directiveDefinition(ExtendsDirective::definition()));
     }
 
     /**
@@ -84,14 +85,14 @@ class FederationServiceProvider extends ServiceProvider
     protected function addScalars(ManipulateAST &$manipulateAST): void
     {
         $manipulateAST->documentAST->setTypeDefinition(
-            PartialParser::scalarTypeDefinition(
+            Parser::scalarTypeDefinition(
                 'scalar _Any @scalar(class: "Nuwave\\\Lighthouse\\\Federation\\\Schema\\\Types\\\Scalars\\\Any")'
             )
         );
 
         // TODO check if required or if we could also use `String!` instead of the _FieldSet scalar. Apollo federation demo uses String!
         $manipulateAST->documentAST->setTypeDefinition(
-            PartialParser::scalarTypeDefinition(
+            Parser::scalarTypeDefinition(
                 'scalar _FieldSet @scalar(class: "Nuwave\\\Lighthouse\\\Federation\\\Schema\\\Types\\\Scalars\\\FieldSet")'
             )
         );
@@ -127,11 +128,12 @@ class FederationServiceProvider extends ServiceProvider
         }
 
         if (count($entities) === 0) {
-            throw new FederationException('There must be at least one type defining the @key directive');
+//            return;
+//            throw new FederationException('There must be at least one type defining the @key directive');
         }
 
         $manipulateAST->documentAST->setTypeDefinition(
-            PartialParser::unionTypeDefinition(sprintf('union _Entity = %s', implode(' | ', $entities)))
+            Parser::unionTypeDefinition(sprintf('union _Entity = %s', implode(' | ', $entities)))
         );
     }
 }

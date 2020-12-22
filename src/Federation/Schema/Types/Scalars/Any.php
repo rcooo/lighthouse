@@ -13,7 +13,7 @@ class Any extends ScalarType
 
     public function parseValue($value)
     {
-        // TODO: Implement parseValue() method.
+        return $value;
     }
 
     public function parseLiteral($valueNode, ?array $variables = null)
